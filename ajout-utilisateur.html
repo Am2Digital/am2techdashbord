@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Admin - Ajout Utilisateur</title>
+</head>
+<body>
+  <h2>➕ Ajouter un utilisateur</h2>
+  <form id="userForm">
+    <input type="text" id="nom" placeholder="Nom complet" required /><br>
+    <input type="email" id="email" placeholder="Email" required /><br>
+    <input type="password" id="password" placeholder="Mot de passe" required /><br>
+    <select id="role" required>
+      <option value="client">Client</option>
+      <option value="admin">Admin</option>
+    </select><br>
+    <button type="submit">Créer le compte</button>
+  </form>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js';
+    import { getAuth, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js';
+    import { getFirestore, setDoc, doc } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js';
+    import emailjs from 'https://cdn.jsdelivr.net/npm/emailjs-com@3.2.0/dist/email.min.js';
+
+    const firebaseConfig = {
+      apiKey: "VOTRE_API_KEY",
+      authDomain: "VOTRE_DOMAINE.firebaseapp.com",
+      projectId: "dentiste-6f7e0",
+      storageBucket: "VOTRE_BUCKET.appspot.com",
+      messagingSenderId: "",
+      appId: ""
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    emailjs.init("ypbvFbzVoOE4rtBjK");
+
+    const form = document.getElementById("userForm");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const nom = form.nom.value;
+      const email = form.email.value;
+      const password = form.password.value;
+      const role = form.role.value;
+
+      try {
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        const uid = userCred.user.uid;
+
+        await setDoc(doc(db, "profils", uid), {
+          nom, email, role
+        });
+
+        await emailjs.send("service_2v25l7h", "template_9g40fri", {
+          to_name: nom,
+          user_email: email,
+          message: `Bonjour ${nom}, votre compte est maintenant actif.
+Connectez-vous ici : https://am2tech.fr/client/login.html
+
+L’équipe Am2Tech`
+        });
+
+        alert("✅ Utilisateur créé et email envoyé !");
+        form.reset();
+      } catch (err) {
+        alert("❌ Erreur : " + err.message);
+      }
+    });
+  </script>
+</body>
+</html>

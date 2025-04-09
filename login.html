@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang='fr'>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<title>Connexion - Espace Client</title>
+<style>body{font-family:sans-serif;background:#f2f2f2;display:flex;justify-content:center;align-items:center;height:100vh;}
+.login-box{background:white;padding:2rem;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.1);width:100%;max-width:400px;}
+input,button{width:100%;padding:0.8rem;margin-bottom:1rem;border-radius:5px;border:1px solid #ccc;}
+button{background:#007bff;color:white;border:none;cursor:pointer;}
+.switch{color:#007bff;cursor:pointer;text-decoration:underline;}p{text-align:center;}
+</style></head>
+<body>
+<div class='login-box'>
+<h2 id='title'>Connexion</h2>
+<input type='email' id='email' placeholder='Email'><input type='password' id='password' placeholder='Mot de passe'>
+<button id='submit'>Se connecter</button>
+<p><span id='toggleText'>Pas encore de compte ?</span> <span class='switch' id='switchMode'>Créer un compte</span></p>
+<p id='message'></p></div>
+<script type='module'>
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js';
+const firebaseConfig = { apiKey: 'VOTRE_API_KEY', authDomain: 'VOTRE_DOMAINE.firebaseapp.com', projectId: 'dentiste-6f7e0', storageBucket: '', messagingSenderId: '', appId: '' };
+const app = initializeApp(firebaseConfig); const auth = getAuth(app);
+let isLogin = true;
+const emailInput = document.getElementById('email'), passwordInput = document.getElementById('password'),
+submitBtn = document.getElementById('submit'), switchMode = document.getElementById('switchMode'),
+toggleText = document.getElementById('toggleText'), title = document.getElementById('title'), message = document.getElementById('message');
+switchMode.addEventListener('click', () => {
+  isLogin = !isLogin;
+  title.textContent = isLogin ? 'Connexion' : 'Créer un compte';
+  submitBtn.textContent = isLogin ? 'Se connecter' : "S'inscrire";
+  toggleText.textContent = isLogin ? 'Pas encore de compte ?' : 'Déjà inscrit ?';
+  switchMode.textContent = isLogin ? 'Créer un compte' : 'Se connecter'; message.textContent = '';
+});
+submitBtn.addEventListener('click', async () => {
+  try {
+    const email = emailInput.value, password = passwordInput.value;
+    if (isLogin) await signInWithEmailAndPassword(auth, email, password);
+    else await createUserWithEmailAndPassword(auth, email, password);
+  } catch (err) { message.textContent = err.message; }
+});
+onAuthStateChanged(auth, user => { if (user) window.location.href = `/client/dashboard.html?uid=${user.uid}`; });
+</script></body></html>

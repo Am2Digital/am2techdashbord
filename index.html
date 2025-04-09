@@ -1,7 +1,91 @@
-<!DOCTYPE html><html><head><title>Accueil AM2TECH</title></head><body>
-    <h1>Bienvenue sur AM2TECH</h1>
-    <ul>
-      <li><a href="/admin/index.html">Dashboard Admin</a></li>
-      <li><a href="/client/login.html">Connexion Client</a></li>
-    </ul>
-    </body></html>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carte Interactive</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f2f2; padding: 2rem; display: flex; justify-content: center; }
+    .card {
+      background: white; padding: 2rem; border-radius: 16px; max-width: 500px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%;
+    }
+    img.photo { width: 100%; max-height: 250px; object-fit: cover; border-radius: 12px; margin-bottom: 1rem; }
+    h2 { margin: 0 0 0.5rem 0; }
+    .badge { display: inline-block; background: #007bff; color: white; padding: 0.3rem 0.7rem; border-radius: 4px; font-size: 0.75rem; margin-bottom: 1rem; }
+    p { margin: 0.4rem 0; }
+    a.link { color: #007bff; text-decoration: none; display: inline-block; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="card" id="card">
+    <div id="photo-section"></div>
+    <h2 id="nom">Chargement...</h2>
+    <div id="badge"></div>
+    <div id="contenu"></div>
+    <a href="/" class="link">↩️ Retour</a>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js';
+    import { getFirestore, doc, getDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "VOTRE_API_KEY",
+      authDomain: "VOTRE_DOMAINE.firebaseapp.com",
+      projectId: "dentiste-6f7e0",
+      storageBucket: "VOTRE_BUCKET.appspot.com",
+      messagingSenderId: "",
+      appId: ""
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const uid = new URLSearchParams(window.location.search).get("uid");
+    if (!uid) document.getElementById("card").innerHTML = "<p>UID manquant dans l'URL.</p>";
+
+    async function chargerProfil() {
+      const ref = doc(db, "profils", uid);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        document.getElementById("card").innerHTML = "<p>Profil introuvable</p>";
+        return;
+      }
+
+      const data = snap.data();
+      const elNom = document.getElementById("nom");
+      const elContenu = document.getElementById("contenu");
+      const elBadge = document.getElementById("badge");
+
+      if (data.photo) {
+        document.getElementById("photo-section").innerHTML = `<img src="${data.photo}" class="photo" alt="photo">`;
+      }
+
+      elNom.textContent = data.nom || "Nom non défini";
+      elBadge.textContent = data.type || "";
+
+      let html = "";
+      if (data.type === "praticien") {
+        if (data.specialite) html += `<div class='badge'>${data.specialite}</div>`;
+        html += `<p><strong>Adresse :</strong> ${data.adresse || "-"}</p>`;
+        html += `<p><strong>Téléphone :</strong> ${data.telephone || "-"}</p>`;
+        if (data.doctolib) html += `<p><a class='link' href='${data.doctolib}' target='_blank'>📅 Prendre rendez-vous</a></p>`;
+      } else if (data.type === "immobilier") {
+        html += `<p><strong>Adresse :</strong> ${data.adresse || "-"}</p>`;
+        html += `<p><strong>Téléphone :</strong> ${data.telephone || "-"}</p>`;
+        html += `<p><strong>Email :</strong> <a href='mailto:${data.email}'>${data.email}</a></p>`;
+        if (data.message) html += `<p><em>${data.message}</em></p>`;
+        if (data.page) html += `<p><a class='link' href='${data.page}' target='_blank'>🔗 Voir ma page</a></p>`;
+      }
+
+      elContenu.innerHTML = html;
+
+      // Incrément du compteur de clics
+      await updateDoc(ref, { clics: increment(1) });
+    }
+
+    chargerProfil();
+  </script>
+</body>
+</html>
